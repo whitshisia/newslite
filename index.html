@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Global News — This Week</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>🌍 Global News — This Week</h1>
+    <div class="controls">
+      <select id="country-select">
+        <option value="us">🇺🇸 USA</option>
+        <option value="gb">🇬🇧 UK</option>
+        <option value="ng">🇳🇬 Nigeria</option>
+        <option value="za">🇿🇦 South Africa</option>
+        <option value="ke">🇰🇪 Kenya</option>
+        <option value="fr">🇫🇷 France</option>
+        <option value="in">🇮🇳 India</option>
+      </select>
+
+      <div class="categories">
+        <button data-category="general" class="active">General</button>
+        <button data-category="technology">Technology</button>
+        <button data-category="business">Business</button>
+        <button data-category="sports">Sports</button>
+        <button data-category="health">Health</button>
+      </div>
+
+      <button id="theme-toggle">🌙 Dark Mode</button>
+    </div>
+  </header>
+
+  <main id="news-container"></main>
+
+  <footer>
+    <p>Powered by <a href="https://newsapi.org" target="_blank">NewsAPI</a></p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
