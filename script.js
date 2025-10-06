@@ -1,6 +1,6 @@
 const container = document.getElementById("news-container");
 const countrySelect = document.getElementById("country-select");
-const categoryButtons = document.querySelectorAll(".category-tab");
+const categoryButtons = document.querySelectorAll(".categories button");
 const themeToggle = document.getElementById("theme-toggle");
 
 let currentCountry = localStorage.getItem("country") || "us";
@@ -27,7 +27,7 @@ async function fetchNews(country, category) {
     }
   }
 
-  container.innerHTML = `<p class="col-span-full text-center text-gray-500">Loading news...</p>`;
+  container.innerHTML = "<p>Loading news...</p>";
 
   try {
     const res = await fetch(`/.netlify/functions/getNews?country=${country}&category=${category}`);
@@ -35,29 +35,33 @@ async function fetchNews(country, category) {
     localStorage.setItem(cacheKey, JSON.stringify({ articles: data.articles, timestamp: Date.now() }));
     renderNews(data.articles);
   } catch (error) {
-    container.innerHTML = `<p class="col-span-full text-center text-red-500">⚠️ Error: ${error.message}</p>`;
+    container.innerHTML = `<p>⚠️ Error: ${error.message}</p>`;
   }
 }
 
 function renderNews(articles, fromCache = false) {
   if (!articles?.length) {
-    container.innerHTML = `<p class="col-span-full text-center text-gray-400">No news available.</p>`;
+    container.innerHTML = "<p>No news available.</p>";
     return;
   }
 
   container.innerHTML = articles
     .filter(a => a.urlToImage)
     .map(article => `
-      <article class="bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition overflow-hidden flex flex-col">
-        <img src="${article.urlToImage}" alt="news" class="h-48 w-full object-cover">
-        <div class="p-4 flex flex-col flex-grow">
-          <h3 class="font-semibold mb-2 text-lg">${article.title}</h3>
-          <p class="text-sm text-gray-600 dark:text-gray-400 flex-grow">${article.description || ""}</p>
-          <a href="${article.url}" target="_blank" class="mt-3 text-primary font-medium hover:underline">Read more →</a>
+      <div class="article">
+        <img src="${article.urlToImage}" alt="news" />
+        <div class="article-content">
+          <h3>${article.title}</h3>
+          <p>${article.description || ""}</p>
+          <a href="${article.url}" target="_blank">Read more →</a>
         </div>
-      </article>
+      </div>
     `)
     .join("");
+
+  if (fromCache) {
+    console.log("Loaded from cache:", articles.length, "articles");
+  }
 }
 
 // Event Listeners
@@ -69,8 +73,8 @@ countrySelect.addEventListener("change", () => {
 
 categoryButtons.forEach(btn => {
   btn.addEventListener("click", () => {
-    categoryButtons.forEach(b => b.classList.remove("active-tab", "bg-white", "text-primary"));
-    btn.classList.add("active-tab", "bg-white", "text-primary");
+    categoryButtons.forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
     currentCategory = btn.dataset.category;
     localStorage.setItem("category", currentCategory);
     fetchNews(currentCountry, currentCategory);
