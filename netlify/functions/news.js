@@ -1,3 +1,7 @@
+// netlify/functions/news.js
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
+let cache = {};
+
 exports.handler = async function(event, context) {
     // Handle CORS preflight request
     if (event.httpMethod === 'OPTIONS') {
@@ -12,7 +16,7 @@ exports.handler = async function(event, context) {
         };
     }
 
-    const { category = 'general', search = '' } = event.queryStringParameters;
+    const { category = 'general', search = '', type = 'all' } = event.queryStringParameters;
     const apiKey = process.env.NEWS_API_KEY;
 
     if (!apiKey) {
@@ -20,21 +24,49 @@ exports.handler = async function(event, context) {
             statusCode: 500,
             headers: {
                 'Access-Control-Allow-Origin': '*',
+                'Content-Type': 'application/json',
             },
             body: JSON.stringify({ error: 'NewsAPI key not configured' }),
         };
     }
 
-    let url;
+    // Create cache key
+    const cacheKey = `${category}-${search}-${type}`;
+    const now = Date.now();
+    
+    // Check cache
+    if (cache[cacheKey] && (now - cache[cacheKey].timestamp < CACHE_DURATION)) {
+        console.log('Serving from cache:', cacheKey);
+        return {
+            statusCode: 200,
+            headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Content-Type': 'application/json',
+                'X-Cache': 'HIT',
+            },
+            body: JSON.stringify(cache[cacheKey].data),
+        };
+    }
+
     try {
-        if (search) {
-            url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(search)}&sortBy=publishedAt&pageSize=20&apiKey=${apiKey}`;
+        let url;
+        let articles = [];
+
+        if (type === 'breaking') {
+            // Get breaking news from general category
+            url = `https://newsapi.org/v2/top-headlines?country=us&category=general&pageSize=5&apiKey=${apiKey}`;
+        } else if (type === 'trending') {
+            // Get trending from multiple categories (limited)
+            url = `https://newsapi.org/v2/top-headlines?country=us&category=general&pageSize=5&apiKey=${apiKey}`;
+        } else if (search) {
+            // Search functionality
+            url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(search)}&sortBy=publishedAt&pageSize=40&apiKey=${apiKey}`;
         } else {
-            url = `https://newsapi.org/v2/top-headlines?country=us&category=${category}&pageSize=20&apiKey=${apiKey}`;
+            // Main news with more articles to support pagination
+            url = `https://newsapi.org/v2/top-headlines?country=us&category=${category}&pageSize=40&apiKey=${apiKey}`;
         }
 
-        console.log('Fetching from:', url.replace(apiKey, '***')); // Log without exposing API key
-
+        console.log('Fetching from API:', url.replace(apiKey, '***'));
         const response = await fetch(url);
         const data = await response.json();
 
@@ -42,11 +74,26 @@ exports.handler = async function(event, context) {
             throw new Error(data.message || `HTTP error! status: ${response.status}`);
         }
 
+        // Store in cache
+        cache[cacheKey] = {
+            data: data,
+            timestamp: now
+        };
+
+        // Clean old cache entries (keep only last 10)
+        const cacheKeys = Object.keys(cache);
+        if (cacheKeys.length > 10) {
+            for (let i = 0; i < cacheKeys.length - 10; i++) {
+                delete cache[cacheKeys[i]];
+            }
+        }
+
         return {
             statusCode: 200,
             headers: {
                 'Access-Control-Allow-Origin': '*',
                 'Content-Type': 'application/json',
+                'X-Cache': 'MISS',
             },
             body: JSON.stringify(data),
         };
@@ -57,6 +104,7 @@ exports.handler = async function(event, context) {
             statusCode: 500,
             headers: {
                 'Access-Control-Allow-Origin': '*',
+                'Content-Type': 'application/json',
             },
             body: JSON.stringify({ 
                 error: 'Failed to fetch news',
