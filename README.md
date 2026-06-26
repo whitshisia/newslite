@@ -262,12 +262,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Font Awesome](https://fontawesome.com) for beautiful icons
 - Contributors and testers
 
-## 📞 Support
-
-- **Documentation**: [GitHub Wiki](link-to-wiki)
-- **Issues**: [GitHub Issues](link-to-issues)
-- **Email**: your-email@example.com
-
 ## 🔄 Changelog
 
 ### v1.0.0
